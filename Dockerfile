@@ -1,37 +1,45 @@
-FROM node:22-alpine AS deps
-
-WORKDIR /app
-
-RUN apk add --no-cache libc6-compat
-
-COPY package.json package-lock.json* ./
-
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
-
-
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN apk add --no-cache libc6-compat
+
+
+FROM base AS deps
+
+RUN corepack enable
+
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+
+RUN \
+  if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; \
+  elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  else npm install; \
+  fi
+
+
+FROM base AS builder
+
+RUN corepack enable
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build
-RUN npm prune --omit=dev
+RUN \
+  if [ -f pnpm-lock.yaml ]; then pnpm run build; \
+  elif [ -f yarn.lock ]; then yarn build; \
+  else npm run build; \
+  fi
 
 
-FROM node:22-alpine AS runner
-
-WORKDIR /app
+FROM base AS runner
 
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-
-RUN apk add --no-cache libc6-compat
 
 COPY --from=builder /app ./
 
