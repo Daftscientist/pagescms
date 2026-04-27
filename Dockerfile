@@ -3,7 +3,10 @@ FROM node:22-alpine AS base
 WORKDIR /app
 
 ARG BASE_URL
+ARG BETTER_AUTH_SECRET=docker-build-placeholder-secret-not-used-at-runtime
+
 ENV BASE_URL=${BASE_URL}
+ENV BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN apk add --no-cache libc6-compat
@@ -31,9 +34,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 RUN \
-  if [ -f pnpm-lock.yaml ]; then pnpm run build; \
-  elif [ -f yarn.lock ]; then yarn build; \
-  else npm run build; \
+  if [ -f pnpm-lock.yaml ]; then pnpm run build --ignore-scripts; \
+  elif [ -f yarn.lock ]; then yarn build --ignore-scripts; \
+  else npm run build --ignore-scripts; \
   fi
 
 
