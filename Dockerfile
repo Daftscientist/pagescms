@@ -2,6 +2,8 @@ FROM node:22-alpine AS base
 
 WORKDIR /app
 
+ARG BASE_URL
+ENV BASE_URL=${BASE_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN apk add --no-cache libc6-compat
