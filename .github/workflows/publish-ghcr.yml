@@ -9,6 +9,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  BASE_URL: https://cms.daft.onl
 
 jobs:
   publish:
@@ -49,5 +50,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
+          build-args: |
+            BASE_URL=${{ env.BASE_URL }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
